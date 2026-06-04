@@ -39,8 +39,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
     // ファイルを Buffer に変換
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Excel 解析
-    const signals = await analyzeExcel(buffer);
+    // Excel 解析（ファイル名でマクロ判定）
+    const signals = await analyzeExcel(buffer, file.name);
 
     // 判定（緑/赤）
     const tier = judgeTier(signals);

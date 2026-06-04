@@ -2,13 +2,16 @@ import { read, WorkBook, Sheet } from 'xlsx';
 import { DiagnosisSignals } from './types';
 import { RED_FLAGS } from './constants';
 
-export async function analyzeExcel(buffer: Buffer): Promise<DiagnosisSignals> {
+export async function analyzeExcel(buffer: Buffer, fileName?: string): Promise<DiagnosisSignals> {
   const workbook = read(buffer, { defval: '' });
 
   const sheetNames = workbook.SheetNames;
   const usedSheets = sheetNames.filter(
     (name) => workbook.Sheets[name] && Object.keys(workbook.Sheets[name]).length > 0
   );
+
+  // 拡張子でマクロを判定（.xlsm = マクロあり）
+  const hasMacrosFromExt = fileName?.toLowerCase().endsWith('.xlsm') || false;
 
   let mergedCellCount = 0;
   let totalRowCount = 0;
@@ -37,14 +40,21 @@ export async function analyzeExcel(buffer: Buffer): Promise<DiagnosisSignals> {
     }
 
     // 複雑な数式を検出
-    for (const cell in sheet) {
-      if (cell === '!merges' || cell === '!ref' || cell === '!cols' || cell === '!rows') {
+    for (const cellKey in sheet) {
+      if (cellKey === '!merges' || cellKey === '!ref' || cellKey === '!cols' || cellKey === '!rows') {
         continue;
       }
 
-      const cellObj = sheet[cell];
-      if (cellObj && typeof cellObj === 'object' && 'f' in cellObj) {
-        const formula = cellObj.f as string;
+      const cellObj = sheet[cellKey];
+      if (cellObj && typeof cellObj === 'object') {
+        let formula = '';
+
+        // SheetJS の数式フォーマット
+        if ('f' in cellObj) {
+          formula = cellObj.f as string;
+        }
+
+        if (!formula) continue;
 
         // VLOOKUP/INDEX/MATCH の使用
         if (formula.match(/VLOOKUP|INDEX|MATCH/i)) {
@@ -79,7 +89,7 @@ export async function analyzeExcel(buffer: Buffer): Promise<DiagnosisSignals> {
   return {
     sheet_count: usedSheets.length,
     row_count_est: Math.max(totalRowCount - 1, 0), // ヘッダー行を除外
-    has_macros: hasMacros(workbook),
+    has_macros: hasMacrosFromExt || hasMacros(workbook),
     merged_cell_count: mergedCellCount,
     formula_complexity: formulaComplexity,
     multiple_tables_detected: multipleTablesDetected,
@@ -99,6 +109,7 @@ function calculateIfNestDepth(formula: string): number {
   let maxDepth = 0;
   let inString = false;
   let stringChar = '';
+  const upperFormula = formula.toUpperCase();
 
   for (let i = 0; i < formula.length; i++) {
     const char = formula[i];
@@ -118,8 +129,8 @@ function calculateIfNestDepth(formula: string): number {
 
     // IF( の開き
     if (
-      formula.substring(i, i + 3).toUpperCase() === 'IF(' &&
-      (i === 0 || !formula[i - 1].match(/[A-Z0-9]/i))
+      upperFormula.substring(i, i + 3) === 'IF(' &&
+      (i === 0 || !formula[i - 1].match(/[A-Z0-9_]/i))
     ) {
       depth++;
       maxDepth = Math.max(maxDepth, depth);
