@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
-  const [monthlyHours, setMonthlyHours] = useState<number>(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,17 +60,12 @@ export default function Home() {
       return;
     }
 
-    if (monthlyHours <= 0) {
-      setError('月の作業時間は 0 より大きい値を入力してください');
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('monthlyHours', monthlyHours.toString());
+    formData.append('monthlyHours', '0');
 
     try {
       const response = await fetch('/api/diagnose', {
@@ -171,31 +165,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* 月の作業時間入力 */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h2 className="text-xl font-semibold text-navy-900 mb-4">
-              2. この作業、今は月どれくらい時間がかかっていますか？
-            </h2>
-
-            <p className="text-sm text-navy-700 mb-4">
-              おおよそで構いません。この情報をもとに投資対効果を計算します。
-            </p>
-
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={monthlyHours || ''}
-                  onChange={(e) => setMonthlyHours(parseFloat(e.target.value) || 0)}
-                  placeholder="例: 10"
-                  className="w-full px-4 py-3 border-2 border-navy-300 rounded-lg focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-200"
-                />
-              </div>
-              <span className="text-navy-900 font-medium">時間 / 月</span>
-            </div>
-          </div>
 
           {/* 注意事項 */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
@@ -230,7 +199,7 @@ export default function Home() {
           {/* 送信ボタン */}
           <button
             type="submit"
-            disabled={isLoading || !file || monthlyHours <= 0}
+            disabled={isLoading || !file}
             className="w-full py-4 bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 text-white font-bold rounded-lg transition-colors text-lg"
           >
             {isLoading ? '診断中...' : '診断を開始'}

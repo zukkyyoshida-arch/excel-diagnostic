@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeExcel, extractSheetSamples } from '@/lib/excel-analyzer';
-import { judgeTier, calculateROI, generateClientToken } from '@/lib/diagnosis-engine';
+import { judgeTier, generateClientToken } from '@/lib/diagnosis-engine';
 import { callHuggingFaceAPI } from '@/lib/hugging-face';
 import { appendDiagnosisResult } from '@/lib/google-sheet';
 import { DiagnosisResponse } from '@/lib/types';
@@ -11,7 +11,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const monthlyHoursStr = formData.get('monthlyHours') as string | null;
 
     // バリデーション
     if (!file) {
@@ -21,20 +20,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
       );
     }
 
-    if (!monthlyHoursStr) {
-      return NextResponse.json(
-        { success: false, error: '月の作業時間が入力されていません' },
-        { status: 400 }
-      );
-    }
-
-    const monthlyHours = parseFloat(monthlyHoursStr);
-    if (isNaN(monthlyHours) || monthlyHours <= 0) {
-      return NextResponse.json(
-        { success: false, error: '月の作業時間は正の数値で入力してください' },
-        { status: 400 }
-      );
-    }
+    const monthlyHours = 0;
 
     // ファイルを Buffer に変換
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -73,10 +59,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
 
     const aiContent = await callHuggingFaceAPI(sheetSamplesText, huggingFaceKey, huggingFaceModel);
 
-    // ROI 計算
-    const hourlyValue =
-      parseInt(process.env.DIAGNOSE_HOURLY_VALUE || '2000') || 2000;
-    const roi = calculateROI(monthlyHours, hourlyValue);
 
     // クライアントトークン生成
     const clientToken = generateClientToken();
@@ -91,9 +73,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
       after: aiContent.after,
       signals,
       monthly_hours_input: monthlyHours,
-      saved_hours: roi.saved_hours,
-      monthly_saving_yen: roi.monthly_saving_yen,
-      payback_months: roi.payback_months,
+      saved_hours: 0,
+      monthly_saving_yen: 0,
+      payback_months: null,
       client_token: clientToken,
     };
 

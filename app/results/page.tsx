@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -9,9 +11,9 @@ export default function ResultsPage() {
   const router = useRouter();
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // URL パラメータから結果を取得（JSON エンコード）
     const resultParam = searchParams.get('result');
     if (resultParam) {
       try {
@@ -23,6 +25,14 @@ export default function ResultsPage() {
     }
     setIsLoading(false);
   }, [searchParams]);
+
+  const copyToken = async () => {
+    if (result?.client_token) {
+      await navigator.clipboard.writeText(result.client_token);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -55,7 +65,6 @@ export default function ResultsPage() {
   const isSuccess = result.tier === 'できます';
   const bannerBgColor = isSuccess ? 'bg-green-50' : 'bg-amber-50';
   const bannerBorderColor = isSuccess ? 'border-green-200' : 'border-amber-200';
-  const bannerTextColor = isSuccess ? 'text-green-900' : 'text-amber-900';
   const bannerTitleColor = isSuccess ? 'text-green-700' : 'text-amber-700';
   const ctaButtonColor = isSuccess
     ? 'bg-green-600 hover:bg-green-700'
@@ -65,18 +74,14 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-gradient-to-br from-navy-50 to-navy-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         {/* 判定バナー */}
-        <div
-          className={`${bannerBgColor} border-2 ${bannerBorderColor} rounded-lg p-8 mb-8`}
-        >
-          <h1
-            className={`text-3xl font-bold ${bannerTitleColor} mb-2`}
-          >
+        <div className={`${bannerBgColor} border-2 ${bannerBorderColor} rounded-lg p-8 mb-8`}>
+          <h1 className={`text-3xl font-bold ${bannerTitleColor} mb-2`}>
             {isSuccess ? '✓ アプリ化できます' : '📋 じっくり相談が必要です'}
           </h1>
-          <p className={`text-lg ${bannerTextColor}`}>
+          <p className={`text-lg ${isSuccess ? 'text-green-600' : 'text-amber-600'}`}>
             {isSuccess
-              ? '標準プランで対応可能です（概算）'
-              : '上位プランでの個別対応になります'}
+              ? 'スマートフォン対応やリアルタイム共有で、業務効率化が実現可能です'
+              : '複雑な構造のため、専門スタッフによるカスタム対応をお勧めします'}
           </p>
         </div>
 
@@ -84,27 +89,47 @@ export default function ResultsPage() {
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-navy-900 mb-6">読み取った内容</h2>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-6">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-2 mb-6">
             <div className="bg-navy-50 rounded-lg p-4">
               <p className="text-sm text-navy-600 font-medium mb-1">ファイル名</p>
               <p className="text-navy-900 font-semibold truncate">{result.file_name}</p>
             </div>
             <div className="bg-navy-50 rounded-lg p-4">
-              <p className="text-sm text-navy-600 font-medium mb-1">シート数</p>
-              <p className="text-navy-900 font-semibold">{result.signals.sheet_count} 枚</p>
-            </div>
-            <div className="bg-navy-50 rounded-lg p-4">
-              <p className="text-sm text-navy-600 font-medium mb-1">推定データ件数</p>
-              <p className="text-navy-900 font-semibold">{result.signals.row_count_est} 件</p>
-            </div>
-            <div className="bg-navy-50 rounded-lg p-4">
               <p className="text-sm text-navy-600 font-medium mb-1">用途</p>
-              <p className="text-navy-900 font-semibold truncate">{result.purpose}</p>
+              <p className="text-navy-900 font-semibold">{result.purpose}</p>
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <p className="text-blue-900">{result.summary}</p>
+          </div>
+        </div>
+
+        {/* ファイル分析結果 */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <h2 className="text-2xl font-bold text-navy-900 mb-6">ファイル分析結果</h2>
+
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="bg-navy-50 rounded-lg p-4 text-center">
+              <p className="text-sm text-navy-600 font-medium mb-2">シート数</p>
+              <p className="text-2xl font-bold text-navy-900">{result.signals.sheet_count}</p>
+            </div>
+            <div className="bg-navy-50 rounded-lg p-4 text-center">
+              <p className="text-sm text-navy-600 font-medium mb-2">推定データ件数</p>
+              <p className="text-2xl font-bold text-navy-900">{result.signals.row_count_est}</p>
+            </div>
+            <div className="bg-navy-50 rounded-lg p-4 text-center">
+              <p className="text-sm text-navy-600 font-medium mb-2">マクロ</p>
+              <p className="text-2xl font-bold text-navy-900">
+                {result.signals.has_macros ? '有' : '無'}
+              </p>
+            </div>
+            <div className="bg-navy-50 rounded-lg p-4 text-center">
+              <p className="text-sm text-navy-600 font-medium mb-2">数式複雑度</p>
+              <p className="text-2xl font-bold text-navy-900">
+                {result.signals.formula_complexity === 'basic' ? '基本' : '複雑'}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -119,7 +144,7 @@ export default function ResultsPage() {
               <div className="space-y-3">
                 {result.before.map((item, idx) => (
                   <div key={idx} className="flex items-start gap-3">
-                    <span className="text-red-500 mt-1">✕</span>
+                    <span className="text-red-500 font-bold mt-1">✕</span>
                     <p className="text-navy-700">{item}</p>
                   </div>
                 ))}
@@ -132,7 +157,7 @@ export default function ResultsPage() {
               <div className="space-y-3">
                 {result.after.map((item, idx) => (
                   <div key={idx} className="flex items-start gap-3">
-                    <span className="text-green-500 mt-1">✓</span>
+                    <span className="text-green-500 font-bold mt-1">✓</span>
                     <p className="text-navy-700">{item}</p>
                   </div>
                 ))}
@@ -141,64 +166,46 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        {/* 投資対効果 */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-          <h2 className="text-2xl font-bold text-navy-900 mb-6">
-            {isSuccess ? '投資対効果' : '概算（詳しくはお見積り）'}
-          </h2>
+        {/* CTA ボタン */}
+        <div className="text-center mb-8">
+          <a
+            href="mailto:support@example.com?subject=Excel診断ツール：相談希望"
+            className={`inline-block px-8 py-4 ${ctaButtonColor} text-white font-bold rounded-lg transition-colors text-lg`}
+          >
+            メールで詳しく相談する
+          </a>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
-              <p className="text-sm text-blue-600 font-medium mb-2">初期費用</p>
-              <p className="text-2xl font-bold text-blue-900">200,000円</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-navy-50 to-navy-100 border border-navy-300 rounded-lg p-6">
-              <p className="text-sm text-navy-600 font-medium mb-2">月額</p>
-              <p className="text-2xl font-bold text-navy-900">15,000円</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
-              <p className="text-sm text-green-600 font-medium mb-2">削減できる手間</p>
-              <p className="text-2xl font-bold text-green-900">
-                {result.saved_hours}
-                <span className="text-sm">時間/月</span>
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
-              <p className="text-sm text-purple-600 font-medium mb-2">投資回収</p>
-              <p className="text-2xl font-bold text-purple-900">
-                {result.payback_months ? `${result.payback_months}ヶ月` : '—'}
-              </p>
-            </div>
-          </div>
-
-          <p className="text-xs text-navy-600 mt-4">
-            ※ 上記は概算です。実際の削減効果はプロジェクト内容により異なります。
+        {/* 注記 */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
+          <p className="text-sm text-gray-700">
+            <strong>⚠️ ご注意：</strong> この診断は Excel の構造から自動判定した概要です。実際の要件・カスタマイズ範囲は面談で確定いたします。
           </p>
         </div>
 
-        {/* CTA ボタン */}
-        <div className="text-center mb-8">
-          <button
-            onClick={() => {
-              // CTA クリック時の処理（後で実装）
-              window.location.href = `mailto:support@example.com?subject=Excel診断結果（${result.file_name}）&body=トークン: ${result.client_token}`;
-            }}
-            className={`px-8 py-4 ${ctaButtonColor} text-white font-bold rounded-lg transition-colors text-lg`}
-          >
-            {isSuccess ? '無料で詳しく相談する' : '専門スタッフに相談する'}
-          </button>
+        {/* 診断トークン */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-navy-600 font-medium mb-1">診断トークン</p>
+              <p className="text-sm font-mono text-navy-900">{result.client_token}</p>
+              <p className="text-xs text-navy-600 mt-2">
+                相談時にこのトークンをお知らせいただくと、診断内容をスムーズに引き継ぎできます。
+              </p>
+            </div>
+            <button
+              onClick={copyToken}
+              className="px-4 py-2 bg-navy-100 hover:bg-navy-200 text-navy-600 font-medium rounded transition-colors flex-shrink-0"
+            >
+              {copied ? '✓ コピー済み' : 'コピー'}
+            </button>
+          </div>
         </div>
 
         {/* プライバシー */}
-        <div className="text-center text-sm text-navy-600">
-          <p>このファイルは診断後に削除されています。</p>
-          <p className="mt-1">
-            診断トークン: <code className="text-xs bg-navy-50 px-2 py-1 rounded">{result.client_token}</code>
-          </p>
-        </div>
+        <p className="text-center text-xs text-navy-600 mt-8">
+          このファイルは診断後に削除されています。
+        </p>
       </div>
     </div>
   );
