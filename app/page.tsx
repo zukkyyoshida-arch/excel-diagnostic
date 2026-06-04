@@ -116,7 +116,7 @@ export default function Home() {
         </div>
 
         {/* フォーム */}
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* ファイル / リンク選択 */}
           <div className="bg-white rounded-lg shadow-lg p-8">
             <h2 className="text-xl font-semibold text-navy-900 mb-4">
@@ -275,12 +275,12 @@ export default function Home() {
               (inputMode === 'file' && !file) ||
               (inputMode === 'link' && !sheetLink.trim())
             }
-            className={`w-full py-4 font-bold rounded-lg transition-colors text-lg font-semibold ${
+            className={`w-full py-4 font-bold rounded-lg transition-colors text-lg font-semibold border-2 ${
               isLoading ||
               (inputMode === 'file' && !file) ||
               (inputMode === 'link' && !sheetLink.trim())
-                ? 'bg-slate-100 text-slate-500 border-2 border-slate-200 cursor-not-allowed opacity-60'
-                : 'bg-navy-600 hover:bg-navy-700 text-white border-0 cursor-pointer'
+                ? 'bg-stone-400 text-stone-700 border-stone-500 cursor-not-allowed'
+                : 'bg-navy-600 hover:bg-navy-700 text-white border-navy-600 cursor-pointer'
             }`}
           >
             {isLoading ? '診断中...' : '診断を開始'}
