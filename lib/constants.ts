@@ -7,7 +7,7 @@ export const DEFAULT_HOURLY_VALUE = 2000; // 作業1時間あたりの価値（�
 // 赤フラグ判定基準
 export const RED_FLAGS = {
   MERGED_CELLS_THRESHOLD: 10, // セル結合数の閾値
-  SHEET_COUNT_THRESHOLD: 4, // シート数の閾値
+  SHEET_COUNT_THRESHOLD: 15, // シート数の閾値（15以上で複雑と判定）
   NESTED_IF_DEPTH_THRESHOLD: 3, // IF のネスト深度の閾値
 };
 
