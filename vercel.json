@@ -3,13 +3,5 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["hnd1"],
-  "env": [
-    "HUGGING_FACE_API_KEY",
-    "HUGGING_FACE_MODEL",
-    "GOOGLE_SERVICE_ACCOUNT_EMAIL",
-    "GOOGLE_PRIVATE_KEY",
-    "GOOGLE_SHEET_ID",
-    "DIAGNOSE_HOURLY_VALUE"
-  ]
+  "regions": ["hnd1"]
 }
