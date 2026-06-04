@@ -275,12 +275,12 @@ export default function Home() {
               (inputMode === 'file' && !file) ||
               (inputMode === 'link' && !sheetLink.trim())
             }
-            className={`w-full py-4 font-bold rounded-lg transition-colors text-lg font-semibold border-2 ${
+            className={`w-full py-4 font-bold rounded-lg transition-colors text-lg font-semibold border-0 ${
               isLoading ||
               (inputMode === 'file' && !file) ||
               (inputMode === 'link' && !sheetLink.trim())
-                ? 'bg-stone-400 text-stone-700 border-stone-500 cursor-not-allowed'
-                : 'bg-navy-600 hover:bg-navy-700 text-white border-navy-600 cursor-pointer'
+                ? 'bg-black text-white cursor-not-allowed opacity-50'
+                : 'bg-black hover:bg-gray-800 text-white cursor-pointer'
             }`}
           >
             {isLoading ? '診断中...' : '診断を開始'}
