@@ -85,9 +85,9 @@ export default function Home() {
       }
 
       const result = await response.json();
-      // 結果画面へのリダイレクト（M4 で実装）
-      console.log('Diagnosis result:', result);
-      // TODO: 結果画面へ遷移
+      // 結果画面へリダイレクト
+      const resultParam = encodeURIComponent(JSON.stringify(result.result));
+      window.location.href = `/results?result=${resultParam}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : '予期しないエラーが発生しました');
     } finally {
