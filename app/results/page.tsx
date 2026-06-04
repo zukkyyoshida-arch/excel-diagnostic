@@ -4,6 +4,9 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { DiagnosisResult } from '@/lib/types';
 
+// Google Sheets API の URL
+const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1xPk9F8fTPoSQV-_GBChGa5xuWD9oMVP-WlsFg7vbdH4/edit?gid=0#gid=0';
+
 export default function ResultsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -29,6 +32,32 @@ export default function ResultsPage() {
       await navigator.clipboard.writeText(result.client_token);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const copyResultsToClipboard = async () => {
+    if (!result) return;
+
+    const data = [
+      new Date().toISOString(),
+      result.client_token,
+      result.file_name,
+      result.tier,
+      result.purpose,
+      result.summary,
+      result.signals.sheet_count,
+      result.signals.row_count_est,
+      result.signals.has_macros ? 'true' : 'false',
+      result.signals.formula_complexity,
+      '診断済み（未対応）',
+    ].join('\t');
+
+    try {
+      await navigator.clipboard.writeText(data);
+      alert('診断結果をクリップボードにコピーしました。Google Sheets に貼り付けてください。');
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      alert('コピーに失敗しました。');
     }
   };
 
@@ -182,7 +211,7 @@ export default function ResultsPage() {
         </div>
 
         {/* 診断トークン */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm text-navy-600 font-medium mb-1">診断トークン</p>
@@ -198,6 +227,33 @@ export default function ResultsPage() {
               {copied ? '✓ コピー済み' : 'コピー'}
             </button>
           </div>
+        </div>
+
+        {/* 結果を Google Sheets に記録 */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h3 className="text-lg font-bold text-navy-900 mb-4">診断結果を記録する</h3>
+          <p className="text-sm text-navy-700 mb-4">
+            診断結果を Google Sheets に記録して、営業管理を効率化できます。
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={copyResultsToClipboard}
+              className="flex-1 px-4 py-3 bg-navy-600 hover:bg-navy-700 text-white font-medium rounded-lg transition-colors"
+            >
+              📋 データをコピー
+            </button>
+            <a
+              href={GOOGLE_SHEET_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors text-center"
+            >
+              📊 Google Sheets を開く
+            </a>
+          </div>
+          <p className="text-xs text-navy-600 mt-3">
+            「データをコピー」をクリックして、「Google Sheets を開く」からシートを開き、空いている行に貼り付けてください。
+          </p>
         </div>
 
         {/* プライバシー */}
