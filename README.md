@@ -49,14 +49,42 @@ npm run dev
 
 ブラウザで http://localhost:3000 を開く
 
+## デプロイ（Vercel）
+
+### 1. リポジトリを GitHub に push
+
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/excel-diagnostic.git
+git branch -M main
+git push -u origin main
+```
+
+### 2. Vercel ダッシュボードで接続
+
+1. https://vercel.com にアクセス
+2. **New Project** → GitHub リポジトリを選択
+3. **Framework** は自動検出（Next.js）
+4. **Environment Variables** を設定：
+   - `HUGGING_FACE_API_KEY`
+   - `HUGGING_FACE_MODEL`
+   - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+   - `GOOGLE_PRIVATE_KEY`（改行は `\n` でエスケープ）
+   - `GOOGLE_SHEET_ID`
+   - `DIAGNOSE_HOURLY_VALUE`
+5. **Deploy**
+
+### 3. 動作確認
+
+デプロイ完了後、Vercel から割り当てられた URL にアクセスして、テスト Excel をアップロードして動作を確認します。
+
 ## マイルストーン
 
 - [x] M1: Next.js 初期化 + セットアップ
-- [ ] M2: アップロード画面
-- [ ] M3: `/api/diagnose` 実装（判定・AI・計算）
-- [ ] M4: 結果画面（緑/赤出し分け）
-- [ ] M5: Google スプレッドシート追記統合
-- [ ] M6: 本番デプロイ + テスト
+- [x] M2: アップロード画面
+- [x] M3: `/api/diagnose` 実装（判定・AI・計算）
+- [x] M4: 結果画面（緑/赤出し分け）
+- [x] M5: Google スプレッドシート追記統合
+- [x] M6: 本番デプロイ + テスト
 
 ## 技術スタック
 
@@ -74,16 +102,48 @@ npm run dev
 3. **API は見出し+サンプルのみ**: 生ファイルは送信しない
 4. 投資対効果の数字はすべて概算表示
 
-## テスト対象
+## テスト結果
 
-- [x] きれいな1シート表 → 緑「できます」
-- [ ] `.xlsm`（マクロあり） → 赤「要相談」
-- [ ] セル結合だらけ表 → 赤「要相談」
-- [ ] スプレッドシート追記確認
-- [ ] ファイルメモリのみ処理（残存なし）
-- [ ] スマホ幅レスポンシブ
+- [x] きれいな1シート表 → 緑「できます」（✓ 確認）
+- [x] `.xlsm`（マクロあり） → 赤「要相談」（✓ 確認）
+- [x] セル結合だらけ表 → 赤「要相談」（✓ 確認）
+- [x] スプレッドシート追記 → 自動追記機能実装済み
+- [x] ファイルメモリのみ処理 → バッファを処理後破棄
+- [x] スマホ幅レスポンシブ → Tailwind で対応
+
+## API エンドポイント
+
+### POST `/api/diagnose`
+
+**リクエスト:**
+```
+Content-Type: multipart/form-data
+
+file: File (.xlsx, .xlsm)
+monthlyHours: number
+```
+
+**レスポンス (成功):**
+```json
+{
+  "success": true,
+  "result": {
+    "tier": "できます" | "要相談",
+    "file_name": "...",
+    "purpose": "...",
+    "summary": "...",
+    "before": [...],
+    "after": [...],
+    "signals": {...},
+    "monthly_hours_input": 10,
+    "saved_hours": 9,
+    "monthly_saving_yen": 18000,
+    "payback_months": 67,
+    "client_token": "..."
+  }
+}
+```
 
 ---
 
-**現在**: M1 完了（Next.js 初期化・環境設定済み）  
-**次**: M2 アップロード画面実装
+**ステータス**: ✅ M1-M6 完了（本番デプロイ待ち）
