@@ -4,9 +4,11 @@ import { useState } from 'react';
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
+  const [sheetLink, setSheetLink] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inputMode, setInputMode] = useState<'file' | 'link'>('file');
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -55,8 +57,13 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!file) {
+    if (inputMode === 'file' && !file) {
       setError('ファイルを選択してください');
+      return;
+    }
+
+    if (inputMode === 'link' && !sheetLink.trim()) {
+      setError('スプレッドシートのリンクを入力してください');
       return;
     }
 
@@ -64,7 +71,11 @@ export default function Home() {
     setError(null);
 
     const formData = new FormData();
-    formData.append('file', file);
+    if (inputMode === 'file' && file) {
+      formData.append('file', file);
+    } else if (inputMode === 'link') {
+      formData.append('sheetLink', sheetLink);
+    }
     formData.append('monthlyHours', '0');
 
     try {
@@ -106,63 +117,123 @@ export default function Home() {
 
         {/* フォーム */}
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* ファイルアップロード */}
+          {/* ファイル / リンク選択 */}
           <div className="bg-white rounded-lg shadow-lg p-8">
             <h2 className="text-xl font-semibold text-navy-900 mb-4">
-              1. Excelファイルをアップロード
+              1. Excel ファイルまたは Google スプレッドシートを選択
             </h2>
 
-            {/* ドラッグ&ドロップエリア */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                isDragging
-                  ? 'border-navy-500 bg-navy-50'
-                  : 'border-navy-300 bg-gray-50 hover:border-navy-400'
-              }`}
-            >
-              <svg
-                className="w-12 h-12 mx-auto mb-3 text-navy-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {/* モード切り替えボタン */}
+            <div className="flex gap-4 mb-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setInputMode('file');
+                  setSheetLink('');
+                  setError(null);
+                }}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                  inputMode === 'file'
+                    ? 'bg-navy-600 text-white'
+                    : 'bg-navy-100 text-navy-700 hover:bg-navy-200'
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-
-              <p className="text-navy-900 font-medium mb-2">
-                ファイルをドラッグしてドロップするか、
-              </p>
-
-              <label className="inline-block cursor-pointer">
-                <input
-                  type="file"
-                  accept=".xlsx,.xlsm"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <span className="inline-block px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white font-medium rounded transition-colors">
-                  ファイルを選択
-                </span>
-              </label>
-
-              {file && (
-                <p className="mt-4 text-sm text-navy-700 font-medium">
-                  ✓ {file.name}
-                </p>
-              )}
+                📁 ファイルをアップロード
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInputMode('link');
+                  setFile(null);
+                  setError(null);
+                }}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                  inputMode === 'link'
+                    ? 'bg-navy-600 text-white'
+                    : 'bg-navy-100 text-navy-700 hover:bg-navy-200'
+                }`}
+              >
+                🔗 リンクを共有
+              </button>
             </div>
 
-            <p className="text-xs text-navy-600 mt-3">
-              対応形式: .xlsx, .xlsm（10MB以下）
-            </p>
+            {/* ファイルアップロードモード */}
+            {inputMode === 'file' && (
+              <>
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    isDragging
+                      ? 'border-navy-500 bg-navy-50'
+                      : 'border-navy-300 bg-gray-50 hover:border-navy-400'
+                  }`}
+                >
+                  <svg
+                    className="w-12 h-12 mx-auto mb-3 text-navy-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+
+                  <p className="text-navy-900 font-medium mb-2">
+                    ファイルをドラッグしてドロップするか、
+                  </p>
+
+                  <label className="inline-block cursor-pointer">
+                    <input
+                      type="file"
+                      accept=".xlsx,.xlsm"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <span className="inline-block px-4 py-2 bg-navy-600 hover:bg-navy-700 text-white font-medium rounded transition-colors">
+                      ファイルを選択
+                    </span>
+                  </label>
+
+                  {file && (
+                    <p className="mt-4 text-sm text-navy-700 font-medium">
+                      ✓ {file.name}
+                    </p>
+                  )}
+                </div>
+
+                <p className="text-xs text-navy-600 mt-3">
+                  対応形式: .xlsx, .xlsm（10MB以下）
+                </p>
+              </>
+            )}
+
+            {/* スプレッドシートリンクモード */}
+            {inputMode === 'link' && (
+              <>
+                <div className="mb-4">
+                  <label className="block text-sm text-navy-700 font-medium mb-2">
+                    Google スプレッドシートのリンク
+                  </label>
+                  <input
+                    type="url"
+                    value={sheetLink}
+                    onChange={(e) => setSheetLink(e.target.value)}
+                    placeholder="https://docs.google.com/spreadsheets/d/..."
+                    className="w-full px-4 py-3 border-2 border-navy-300 rounded-lg focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-200"
+                  />
+                </div>
+
+                <p className="text-xs text-navy-600">
+                  ✓ 共有リンク（閲覧可能）と エクスポートリンク の両形式に対応しています
+                </p>
+              </>
+            )}
           </div>
 
 
@@ -199,7 +270,11 @@ export default function Home() {
           {/* 送信ボタン */}
           <button
             type="submit"
-            disabled={isLoading || !file}
+            disabled={
+              isLoading ||
+              (inputMode === 'file' && !file) ||
+              (inputMode === 'link' && !sheetLink.trim())
+            }
             className="w-full py-4 bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 text-white font-bold rounded-lg transition-colors text-lg"
           >
             {isLoading ? '診断中...' : '診断を開始'}

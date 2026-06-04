@@ -3,6 +3,7 @@ import { analyzeExcel, extractSheetSamples } from '@/lib/excel-analyzer';
 import { judgeTier, generateClientToken } from '@/lib/diagnosis-engine';
 import { callHuggingFaceAPI } from '@/lib/hugging-face';
 import { appendDiagnosisResult } from '@/lib/google-sheet';
+import { downloadSheetAsExcel, validateSheetLink } from '@/lib/sheets-downloader';
 import { DiagnosisResponse } from '@/lib/types';
 
 export const maxDuration = 60;
@@ -11,22 +12,61 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const sheetLink = formData.get('sheetLink') as string | null;
 
-    // バリデーション
-    if (!file) {
+    let buffer: Buffer;
+    let fileName: string;
+
+    // ファイルまたはリンクのいずれかが必須
+    if (!file && !sheetLink) {
       return NextResponse.json(
-        { success: false, error: 'ファイルが見つかりません' },
+        { success: false, error: 'ファイルまたはスプレッドシートリンクが必要です' },
+        { status: 400 }
+      );
+    }
+
+    // ファイルとリンクの両方が指定された場合はエラー
+    if (file && sheetLink) {
+      return NextResponse.json(
+        { success: false, error: 'ファイルとリンクは同時に指定できません' },
         { status: 400 }
       );
     }
 
     const monthlyHours = 0;
 
-    // ファイルを Buffer に変換
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // ファイルまたはスプレッドシートリンクから Buffer を取得
+    if (file) {
+      buffer = Buffer.from(await file.arrayBuffer());
+      fileName = file.name;
+    } else if (sheetLink) {
+      // バリデーション
+      if (!validateSheetLink(sheetLink)) {
+        return NextResponse.json(
+          { success: false, error: '有効な Google スプレッドシートリンクを入力してください' },
+          { status: 400 }
+        );
+      }
 
-    // Excel 解析（ファイル名でマクロ判定）
-    const signals = await analyzeExcel(buffer, file.name);
+      try {
+        buffer = await downloadSheetAsExcel(sheetLink);
+        fileName = 'sheet.xlsx';
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'ダウンロードに失敗しました';
+        return NextResponse.json(
+          { success: false, error: errorMsg },
+          { status: 400 }
+        );
+      }
+    } else {
+      return NextResponse.json(
+        { success: false, error: '予期しないエラーが発生しました' },
+        { status: 500 }
+      );
+    }
+
+    // Excel 解析（ファイル名またはデフォルトでマクロ判定）
+    const signals = await analyzeExcel(buffer, fileName);
 
     // 判定（緑/赤）
     const tier = judgeTier(signals);
@@ -66,7 +106,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
     // 診断結果オブジェクト
     const diagnosisResult = {
       tier,
-      file_name: file.name,
+      file_name: fileName,
       purpose: aiContent.purpose,
       summary: aiContent.summary,
       before: aiContent.before,
