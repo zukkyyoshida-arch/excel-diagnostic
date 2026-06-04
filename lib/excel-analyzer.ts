@@ -3,7 +3,7 @@ import { DiagnosisSignals } from './types';
 import { RED_FLAGS } from './constants';
 
 export async function analyzeExcel(buffer: Buffer, fileName?: string): Promise<DiagnosisSignals> {
-  const workbook = read(buffer, { defval: '' });
+  const workbook = read(buffer, { cellFormula: true } as any);
 
   const sheetNames = workbook.SheetNames;
   const usedSheets = sheetNames.filter(

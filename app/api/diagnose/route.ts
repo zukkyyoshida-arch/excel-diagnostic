@@ -47,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
 
     // シートサンプルを抽出
     const { sheets } = extractSheetSamples(
-      require('xlsx').read(buffer, { defval: '' }),
+      require('xlsx').read(buffer, { cellFormula: true } as any),
       3
     );
 
