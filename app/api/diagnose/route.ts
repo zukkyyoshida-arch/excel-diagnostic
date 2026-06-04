@@ -68,14 +68,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
     // Excel 解析（ファイル名またはデフォルトでマクロ判定）
     const signals = await analyzeExcel(buffer, fileName);
 
+    console.log('[Diagnose] Signals:', signals);
+
     // 判定（緑/赤）
     const tier = judgeTier(signals);
 
     // シートサンプルを抽出
-    const { sheets } = extractSheetSamples(
-      require('xlsx').read(buffer, { cellFormula: true } as any),
-      3
-    );
+    const workbook = require('xlsx').read(buffer, { cellFormula: true } as any);
+    console.log('[Diagnose] SheetNames:', workbook.SheetNames);
+    console.log('[Diagnose] SheetNames count:', workbook.SheetNames.length);
+
+    const { sheets } = extractSheetSamples(workbook, 3);
+    console.log('[Diagnose] Extracted sheets:', sheets.length);
 
     // サンプルテキストを生成
     const sheetSamplesText = sheets

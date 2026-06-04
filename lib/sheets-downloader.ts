@@ -20,6 +20,7 @@ export function extractSheetId(link: string): string | null {
 
 export function getExportUrl(sheetId: string): string {
   // エクスポート URL: XLSX 形式でダウンロード
+  // gid=0 で最初のシートを指定（他のシートを含める場合は削除可能）
   return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`;
 }
 
