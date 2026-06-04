@@ -68,6 +68,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<Diagnosis
     // Excel 解析（ファイル名またはデフォルトでマクロ判定）
     const signals = await analyzeExcel(buffer, fileName);
 
+    console.log('🔍 [Diagnose] Excel Analysis Result:', {
+      sheet_count: signals.sheet_count,
+      row_count_est: signals.row_count_est,
+      has_macros: signals.has_macros,
+      formula_complexity: signals.formula_complexity,
+    });
+
     // 判定（緑/赤）
     const tier = judgeTier(signals);
 

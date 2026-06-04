@@ -2,30 +2,42 @@ import { DiagnosisSignals, DiagnosisTier } from './types';
 import { RED_FLAGS, INITIAL_COST, MONTHLY_COST, REDUCTION_RATE } from './constants';
 
 export function judgeTier(signals: DiagnosisSignals): DiagnosisTier {
-  // 赤フラグをチェック（いずれか該当で「要相談」）
+  // 営業的に「要相談」を優先：3つ以上の条件で「要相談」、それ以外も慎重に判定
+
+  let redFlagCount = 0;
 
   // 1. マクロあり
   if (signals.has_macros) {
-    return '要相談';
+    redFlagCount++;
   }
 
-  // 2. セル結合が多い
-  if (signals.merged_cell_count >= RED_FLAGS.MERGED_CELLS_THRESHOLD) {
-    return '要相談';
+  // 2. セル結合が多い（5個以上）
+  if (signals.merged_cell_count >= 5) {
+    redFlagCount++;
   }
 
-  // 3. シートが多い
-  if (signals.sheet_count >= RED_FLAGS.SHEET_COUNT_THRESHOLD) {
-    return '要相談';
+  // 3. シートが多い（10以上）
+  if (signals.sheet_count >= 10) {
+    redFlagCount++;
   }
 
   // 4. 複雑な数式
   if (signals.formula_complexity === 'complex') {
-    return '要相談';
+    redFlagCount++;
   }
 
   // 5. 複数の表が混在
   if (signals.multiple_tables_detected) {
+    redFlagCount++;
+  }
+
+  // 6. データ件数が多い（500行以上）
+  if (signals.row_count_est >= 500) {
+    redFlagCount++;
+  }
+
+  // 営業判定：2つ以上で「要相談」、完全にシンプルなもののみ「できます」
+  if (redFlagCount >= 2) {
     return '要相談';
   }
 
