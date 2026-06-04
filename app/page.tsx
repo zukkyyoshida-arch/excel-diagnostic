@@ -275,7 +275,13 @@ export default function Home() {
               (inputMode === 'file' && !file) ||
               (inputMode === 'link' && !sheetLink.trim())
             }
-            className="w-full py-4 bg-navy-600 hover:bg-navy-700 disabled:bg-gray-400 text-white font-bold rounded-lg transition-colors text-lg"
+            className={`w-full py-4 text-white font-bold rounded-lg transition-colors text-lg ${
+              isLoading ||
+              (inputMode === 'file' && !file) ||
+              (inputMode === 'link' && !sheetLink.trim())
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-navy-600 hover:bg-navy-700 cursor-pointer'
+            }`}
           >
             {isLoading ? '診断中...' : '診断を開始'}
           </button>
